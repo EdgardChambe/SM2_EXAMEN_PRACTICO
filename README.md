@@ -51,7 +51,36 @@ Asignación fácil de cada carta a un restaurante específico dentro del sistema
 
 3.Enlaces y Referencias: Si has utilizado recursos externos (librerías, APIs, etc.), menciona los enlaces o referencias.
 
-- Flutter para la creación de la interfaz.
-     - Firebase para el almacenamiento y gestión de datos en tiempo real.
+Flutter:
+La aplicación está construida con Flutter, un framework de desarrollo de aplicaciones móviles de Google. Permite crear aplicaciones nativas para iOS y Android desde una única base de código.
+Enlace: https://flutter.dev/
+
+Firebase:
+Firebase se utiliza para la gestión de bases de datos en tiempo real, autenticación de usuarios y almacenamiento de imágenes.
+Enlace: https://firebase.google.com/
+
+Cloud Firestore:
+Se utilizo Cloud Firestore de Firebase para almacenar los datos de restaurantes, cartas, productos y usuarios en tiempo real, permitiendo actualizaciones dinámicas y rápidas en la aplicación.
+Enlace: https://firebase.google.com/docs/firestore
+
+Flutter Provider:
+Se utiliza el paquete Provider para la gestión de estado de la aplicación, facilitando el manejo de datos globales y la actualización eficiente de la UI.
+Enlace: https://pub.dev/packages/provider
+
+Flutter Image Picker:
+La librería image_picker se utiliza para permitir a los administradores subir imágenes de los productos o cartas desde la galería del dispositivo o mediante la cámara.
+Enlace: https://pub.dev/packages/image_picker
+
+Flutter Validation:
+Para validar los datos de entrada de los formularios, se utiliza un conjunto de validaciones personalizadas basadas en el paquete form_field_validator.
+Enlace: https://pub.dev/packages/form_field_validator
+
+FontAwesome Flutter:
+Se usa la librería FontAwesome para incluir iconos de alta calidad en la interfaz de usuario de la aplicación.
+Enlace: https://pub.dev/packages/font_awesome_flutter
+
+Dart:
+Dart es el lenguaje de programación utilizado para escribir la lógica de la aplicación junto con Flutter.
+Enlace: https://dart.dev/
  
 
