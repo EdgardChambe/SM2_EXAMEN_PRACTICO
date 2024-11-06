@@ -42,9 +42,9 @@ Asignación fácil de cada carta a un restaurante específico dentro del sistema
 
 ![image](https://github.com/user-attachments/assets/ab097014-c40d-4f39-b61b-ff83581abbe8)
 
-# **Gestion y Registro de las Cartas asignada a un Negocio:**
-
 ![image](https://github.com/user-attachments/assets/8db2cf95-0ad9-4fba-ba8f-671a79e10d20)
+
+# **Gestion y Registro de las Cartas asignada a un Negocio:**
 
 ![image](https://github.com/user-attachments/assets/dc0da006-97d8-4d83-a044-a88372d7bf67)
 
