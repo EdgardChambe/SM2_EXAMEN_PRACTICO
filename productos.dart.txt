@@ -1,0 +1,242 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:restmap/views/customer/detalleproducto.dart';
+
+class ProductosPage extends StatefulWidget {
+  final String negocioId;
+  final String userId;
+
+  ProductosPage({required this.negocioId, required this.userId});
+
+  @override
+  _ProductosPageState createState() => _ProductosPageState();
+}
+
+class _ProductosPageState extends State<ProductosPage> {
+  Map<String, int> selectedQuantities = {};
+  Map<String, bool> showFullDescription = {};
+  List<Map<String, dynamic>> productos = [];
+  double total = 0.0;
+  int totalProducts = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProductos();
+  }
+
+  Future<void> _loadProductos() async {
+    final productosSnapshot = await FirebaseFirestore.instance
+        .collection('productos')
+        .where('negocioId', isEqualTo: widget.negocioId)
+        .get();
+
+    if (productosSnapshot.docs.isNotEmpty) {
+      setState(() {
+        productos = productosSnapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
+      });
+    }
+  }
+
+  void _updateTotal() {
+    total = 0.0;
+    totalProducts = 0;
+    selectedQuantities.forEach((key, value) {
+      var producto = productos.firstWhere((p) => p['codigo'] == key);
+      total += (producto['precio'] * value);
+      totalProducts += value;
+    });
+    setState(() {});
+  }
+
+  void agregarProductoaCarrito() async {
+    final carrito = selectedQuantities.entries.map((entry) {
+      var producto = productos.firstWhere((p) => p['codigo'] == entry.key);
+      return {
+        'nombre': producto['nombre'],
+        'cantidad': entry.value,
+        'precio': producto['precio'],
+      };
+    }).toList();
+
+    await FirebaseFirestore.instance.collection('usuarios').doc(widget.userId).update({
+      'carrito': FieldValue.arrayUnion(carrito),
+    });
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetalleProductoPage(
+          negocioId: widget.negocioId,
+          productosSeleccionados: carrito,
+          total: total,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Productos del Negocio'),
+      ),
+      body: Stack(
+        children: [
+          productos.isNotEmpty
+              ? SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Productos Disponibles',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: productos.length,
+                        itemBuilder: (context, index) {
+                          var producto = productos[index];
+                          String codigoProducto = producto['codigo'];
+                          bool mostrarDescripcionCompleta =
+                              showFullDescription[codigoProducto] ?? false;
+
+                          int stock = producto['stock'];
+                          String estado = producto['estado'];
+                          int selectedQuantity =
+                              selectedQuantities[producto['codigo']] ?? 0;
+
+                          bool isAvailable = estado == 'disponible' || estado == 'promocion';
+                          bool isStockLimited = stock > 0;
+                          bool canAddMore = isStockLimited ? selectedQuantity < stock : true;
+
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              leading: producto['urlImagen'] != null
+                                  ? Image.network(producto['urlImagen'], width: 80, height: 80, fit: BoxFit.cover)
+                                  : Icon(Icons.fastfood, size: 50),
+                              title: Text(producto['nombre']),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    producto['descripcion'],
+                                    maxLines: mostrarDescripcionCompleta ? null : 2,
+                                    overflow: mostrarDescripcionCompleta
+                                        ? TextOverflow.visible
+                                        : TextOverflow.ellipsis,
+                                    textAlign: TextAlign.justify,
+                                  ),
+                                  if (producto['descripcion'].length > 50)
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          showFullDescription[codigoProducto] =
+                                              !mostrarDescripcionCompleta;
+                                        });
+                                      },
+                                      child: Text(
+                                        mostrarDescripcionCompleta ? 'Leer menos' : 'Leer más',
+                                        style: TextStyle(color: Colors.blue),
+                                      ),
+                                    ),
+                                  Text('S/${producto['precio']}'),
+                                  if (isStockLimited)
+                                    Text('Stock: $stock', style: TextStyle(color: Colors.green)),
+                                  if (estado == 'agotado')
+                                    Text('Agotado', style: TextStyle(color: Colors.red)),
+                                ],
+                              ),
+                              trailing: isAvailable
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (selectedQuantity > 0)
+                                          IconButton(
+                                            icon: Icon(Icons.remove),
+                                            onPressed: () {
+                                              setState(() {
+                                                selectedQuantities[producto['codigo']] =
+                                                    selectedQuantity - 1;
+                                                _updateTotal();
+                                              });
+                                            },
+                                          ),
+                                        Text('$selectedQuantity'),
+                                        IconButton(
+                                          icon: Icon(Icons.add),
+                                          onPressed: canAddMore
+                                              ? () {
+                                                  setState(() {
+                                                    selectedQuantities[producto['codigo']] =
+                                                        selectedQuantity + 1;
+                                                    _updateTotal();
+                                                  });
+                                                }
+                                              : null,
+                                        ),
+                                      ],
+                                    )
+                                  : ElevatedButton(
+                                      onPressed: null,
+                                      child: Text(
+                                        'Agotado',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                )
+              : Center(child: CircularProgressIndicator()),
+
+          if (total > 0)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                color: Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$totalProducts producto(s)',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'S/${total.toStringAsFixed(1)}',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      ),
+                      onPressed: agregarProductoaCarrito,
+                      child: Text(
+                        'Ordenar',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
